@@ -15,9 +15,10 @@ import javax.ws.rs.HttpMethod;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import net.tirasa.batch.rest.poc.batch.BatchItem;
 import net.tirasa.batch.rest.poc.batch.BatchPayloadGenerator;
 import net.tirasa.batch.rest.poc.batch.BatchPayloadParser;
+import net.tirasa.batch.rest.poc.batch.BatchRequestItem;
+import net.tirasa.batch.rest.poc.batch.BatchResponseItem;
 import org.apache.cxf.helpers.IOUtils;
 import org.apache.cxf.jaxrs.client.WebClient;
 import org.junit.jupiter.api.Test;
@@ -30,9 +31,9 @@ public class BasicITCase {
 
     @Test
     public void basic() throws IOException {
-        List<BatchItem> items = new ArrayList<>();
+        List<BatchRequestItem> reqItems = new ArrayList<>();
 
-        BatchItem create = new BatchItem();
+        BatchRequestItem create = new BatchRequestItem();
         create.setMethod(HttpMethod.POST);
         create.setRequestURI("/users");
         create.setHeaders(new HashMap<>());
@@ -45,9 +46,9 @@ public class BasicITCase {
                 + "    <surname>Doe</surname>\n"
                 + "  </attributes>\n"
                 + "</user>");
-        items.add(create);
+        reqItems.add(create);
 
-        BatchItem update = new BatchItem();
+        BatchRequestItem update = new BatchRequestItem();
         update.setMethod(HttpMethod.PUT);
         update.setRequestURI("/users/xxxyyy");
         update.setHeaders(new HashMap<>());
@@ -60,36 +61,39 @@ public class BasicITCase {
                 + "    \"lastname\": \"Doe\"\n"
                 + "  ]\n"
                 + "}");
-        items.add(update);
+        reqItems.add(update);
 
-        BatchItem delete1 = new BatchItem();
+        BatchRequestItem delete1 = new BatchRequestItem();
         delete1.setMethod(HttpMethod.DELETE);
         delete1.setRequestURI("/roles/xxxyyy");
-        items.add(delete1);
+        reqItems.add(delete1);
 
-        BatchItem delete2 = new BatchItem();
+        BatchRequestItem delete2 = new BatchRequestItem();
         delete2.setMethod(HttpMethod.DELETE);
         delete2.setRequestURI("/users/xxxyyy");
-        items.add(delete2);
+        reqItems.add(delete2);
 
         String boundary = "--batch_" + UUID.randomUUID().toString();
 
         Response response = WebClient.create("http://localhost:8080").path("batch").
                 type("multipart/mixed;boundary=" + boundary.substring(2)).
-                post(BatchPayloadGenerator.generate(items, boundary));
+                post(BatchPayloadGenerator.generate(reqItems, boundary));
         assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
         assertTrue(response.getMediaType().toString().startsWith("multipart/mixed;boundary="));
 
         String body = IOUtils.toString((InputStream) response.getEntity());
         LOG.debug("Batch response body:\n{}", body);
 
-        items = BatchPayloadParser.parse(new ByteArrayInputStream(body.getBytes()), response.getMediaType());
-        assertEquals(4, items.size());
-        assertEquals(Response.Status.CREATED.getStatusCode(), items.get(0).getStatus());
-        assertEquals(MediaType.APPLICATION_XML, items.get(0).getHeaders().get(HttpHeaders.CONTENT_TYPE).get(0));
-        assertEquals(Response.Status.OK.getStatusCode(), items.get(1).getStatus());
-        assertEquals(MediaType.APPLICATION_JSON, items.get(1).getHeaders().get(HttpHeaders.CONTENT_TYPE).get(0));
-        assertEquals(Response.Status.NOT_FOUND.getStatusCode(), items.get(2).getStatus());
-        assertEquals(Response.Status.NO_CONTENT.getStatusCode(), items.get(3).getStatus());
+        List<BatchResponseItem> resItems = BatchPayloadParser.parse(
+                new ByteArrayInputStream(body.getBytes()),
+                response.getMediaType(),
+                new BatchResponseItem());
+        assertEquals(4, resItems.size());
+        assertEquals(Response.Status.CREATED.getStatusCode(), resItems.get(0).getStatus());
+        assertEquals(MediaType.APPLICATION_XML, resItems.get(0).getHeaders().get(HttpHeaders.CONTENT_TYPE).get(0));
+        assertEquals(Response.Status.OK.getStatusCode(), resItems.get(1).getStatus());
+        assertEquals(MediaType.APPLICATION_JSON, resItems.get(1).getHeaders().get(HttpHeaders.CONTENT_TYPE).get(0));
+        assertEquals(Response.Status.NOT_FOUND.getStatusCode(), resItems.get(2).getStatus());
+        assertEquals(Response.Status.NO_CONTENT.getStatusCode(), resItems.get(3).getStatus());
     }
 }

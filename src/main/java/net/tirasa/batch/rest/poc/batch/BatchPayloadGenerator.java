@@ -3,12 +3,13 @@ package net.tirasa.batch.rest.poc.batch;
 import java.util.List;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.Response;
+import org.springframework.util.CollectionUtils;
 
 public class BatchPayloadGenerator {
 
     private static final String HTTP_1_1 = "HTTP/1.1";
 
-    public static String generate(final List<BatchItem> items, final String boundary) {
+    public static <T extends BatchItem> String generate(final List<T> items, final String boundary) {
         StringBuilder payload = new StringBuilder();
 
         items.forEach(item -> {
@@ -17,22 +18,24 @@ public class BatchPayloadGenerator {
             payload.append("Content-Transfer-Encoding: binary").append('\n');
             payload.append(BatchConstants.CRLF);
 
-            if (item.getMethod() != null) {
-                payload.append(item.getMethod()).append(' ').append(item.getRequestURI());
-                if (item.getQueryString() != null) {
-                    payload.append('?').append(item.getQueryString());
+            if (item instanceof BatchRequestItem) {
+                BatchRequestItem bri = BatchRequestItem.class.cast(item);
+                payload.append(bri.getMethod()).append(' ').append(bri.getRequestURI());
+                if (bri.getQueryString() != null) {
+                    payload.append('?').append(bri.getQueryString());
                 }
                 payload.append(' ').append(HTTP_1_1).append('\n');
             }
 
-            if (item.getStatus() > 0) {
+            if (item instanceof BatchResponseItem) {
+                BatchResponseItem bri = BatchResponseItem.class.cast(item);
                 payload.append(HTTP_1_1).append(' ').
-                        append(item.getStatus()).append(' ').
-                        append(Response.Status.fromStatusCode(item.getStatus()).getReasonPhrase()).
+                        append(bri.getStatus()).append(' ').
+                        append(Response.Status.fromStatusCode(bri.getStatus()).getReasonPhrase()).
                         append('\n');
             }
 
-            if (item.getHeaders() != null && !item.getHeaders().isEmpty()) {
+            if (!CollectionUtils.isEmpty(item.getHeaders())) {
                 item.getHeaders().forEach((key, values) -> {
                     values.forEach(value -> {
                         payload.append(key).append(": ").append(value).append('\n');

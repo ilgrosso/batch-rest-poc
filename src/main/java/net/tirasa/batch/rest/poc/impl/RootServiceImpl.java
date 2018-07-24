@@ -11,9 +11,10 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import net.tirasa.batch.rest.poc.api.RootService;
-import net.tirasa.batch.rest.poc.batch.BatchItem;
 import net.tirasa.batch.rest.poc.batch.BatchPayloadGenerator;
 import net.tirasa.batch.rest.poc.batch.BatchPayloadParser;
+import net.tirasa.batch.rest.poc.batch.BatchRequestItem;
+import net.tirasa.batch.rest.poc.batch.BatchResponseItem;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.cxf.Bus;
 import org.apache.cxf.BusException;
@@ -82,10 +83,12 @@ public class RootServiceImpl implements RootService {
         DestinationRegistry destinationRegistry = getDestinationRegistryFromBusOrDefault(
                 mc.getServletConfig().getInitParameter(CXFNonSpringServlet.TRANSPORT_ID));
 
-        List<BatchItem> batchRequestItems;
+        List<BatchRequestItem> batchRequestItems;
         try {
             batchRequestItems = BatchPayloadParser.parse(
-                    input, MediaType.valueOf(mc.getHttpServletRequest().getContentType()));
+                    input,
+                    MediaType.valueOf(mc.getHttpServletRequest().getContentType()),
+                    new BatchRequestItem());
         } catch (IOException e) {
             throw new InternalServerErrorException(e);
         }
@@ -96,8 +99,8 @@ public class RootServiceImpl implements RootService {
 
         batchResponse.type("multipart/mixed;boundary=" + boundary.substring(2));
 
-        List<BatchItem> batchResponseItems = new ArrayList<>(batchRequestItems.size());
-        batchRequestItems.forEach((BatchItem reqItem) -> {
+        List<BatchResponseItem> batchResponseItems = new ArrayList<>(batchRequestItems.size());
+        batchRequestItems.forEach((BatchRequestItem reqItem) -> {
             LOG.debug("Batch item:\n{}", reqItem);
 
             AbstractHTTPDestination dest =
@@ -108,7 +111,7 @@ public class RootServiceImpl implements RootService {
             LOG.debug("Destination found for {}: {}", reqItem.getRequestURI(), dest);
 
             if (dest == null) {
-                BatchItem resItem = new BatchItem();
+                BatchResponseItem resItem = new BatchResponseItem();
                 resItem.setStatus(404);
                 batchResponseItems.add(resItem);
             } else {
@@ -126,7 +129,7 @@ public class RootServiceImpl implements RootService {
                             response.getHeaders(),
                             new String(response.getUnderlyingOutputStream().toByteArray()));
 
-                    BatchItem resItem = new BatchItem();
+                    BatchResponseItem resItem = new BatchResponseItem();
                     resItem.setStatus(response.getStatus());
                     resItem.setHeaders(response.getHeaders());
 
@@ -138,7 +141,7 @@ public class RootServiceImpl implements RootService {
                 } catch (IOException e) {
                     LOG.error("Invocation failed", e);
 
-                    BatchItem resItem = new BatchItem();
+                    BatchResponseItem resItem = new BatchResponseItem();
                     resItem.setStatus(404);
                     batchResponseItems.add(resItem);
                 }

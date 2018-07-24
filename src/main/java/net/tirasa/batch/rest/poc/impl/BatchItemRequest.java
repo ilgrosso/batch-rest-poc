@@ -11,18 +11,18 @@ import javax.servlet.ServletInputStream;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletRequestWrapper;
 import javax.ws.rs.core.HttpHeaders;
-import net.tirasa.batch.rest.poc.batch.BatchItem;
+import net.tirasa.batch.rest.poc.batch.BatchRequestItem;
 import org.springframework.http.MediaType;
 
 public class BatchItemRequest extends HttpServletRequestWrapper {
 
-    private final BatchItem batchItem;
+    private final BatchRequestItem batchItem;
 
     private final ServletInputStream inputStream;
 
     public BatchItemRequest(
             final HttpServletRequest request,
-            final BatchItem batchItem) {
+            final BatchRequestItem batchItem) {
 
         super(request);
         this.batchItem = batchItem;

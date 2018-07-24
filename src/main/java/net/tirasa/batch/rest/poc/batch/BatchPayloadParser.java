@@ -14,6 +14,7 @@ import java.util.stream.Stream;
 import javax.ws.rs.HttpMethod;
 import javax.ws.rs.core.MediaType;
 import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang3.SerializationUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -89,7 +90,7 @@ public class BatchPayloadParser {
         return messageParts;
     }
 
-    private static void consumeHeaders(final List<BatchPayloadLine> bodyPart, final BatchItem batchItem) {
+    private static void consumeHeaders(final List<BatchPayloadLine> bodyPart, final BatchItem item) {
         Map<String, List<Object>> headers = new HashMap<>();
 
         boolean isHeader = true;
@@ -112,16 +113,20 @@ public class BatchPayloadParser {
             if (currentLine.toString().contains("HTTP/1.1")) {
                 itor.remove();
 
-                if (ArrayUtils.contains(HTTP_METHODS, StringUtils.substringBefore(currentLine.toString(), " "))) {
+                if (ArrayUtils.contains(HTTP_METHODS, StringUtils.substringBefore(currentLine.toString(), " "))
+                        && item instanceof BatchRequestItem) {
+
+                    BatchRequestItem bri = BatchRequestItem.class.cast(item);
                     String[] parts = currentLine.toString().split(" ");
-                    batchItem.setMethod(parts[0]);
+                    bri.setMethod(parts[0]);
                     String[] target = parts[1].split("\\?");
-                    batchItem.setRequestURI(target[0]);
+                    bri.setRequestURI(target[0]);
                     if (target.length > 1) {
-                        batchItem.setQueryString(target[1]);
+                        bri.setQueryString(target[1]);
                     }
-                } else {
-                    batchItem.setStatus(Integer.valueOf(StringUtils.substringBefore(
+                } else if (item instanceof BatchResponseItem) {
+                    BatchResponseItem bri = BatchResponseItem.class.cast(item);
+                    bri.setStatus(Integer.valueOf(StringUtils.substringBefore(
                             StringUtils.substringAfter(currentLine.toString(), " "), " ").trim()));
                 }
             } else {
@@ -145,7 +150,7 @@ public class BatchPayloadParser {
         }
         consumeBlankLine(bodyPart);
 
-        batchItem.setHeaders(headers);
+        item.setHeaders(headers);
     }
 
     private static void consumeBlankLine(final List<BatchPayloadLine> bodyPart) {
@@ -154,7 +159,11 @@ public class BatchPayloadParser {
         }
     }
 
-    public static List<BatchItem> parse(final InputStream in, final MediaType multipartMixed) throws IOException {
+    public static <T extends BatchItem> List<T> parse(
+            final InputStream in,
+            final MediaType multipartMixed,
+            final T template) throws IOException {
+
         List<BatchPayloadLine> lines;
         try (BatchPayloadLineReader lineReader = new BatchPayloadLineReader(in, multipartMixed)) {
             lines = lineReader.read();
@@ -164,13 +173,13 @@ public class BatchPayloadParser {
                 map(bodyPart -> {
                     LOG.debug("Body part:\n{}", bodyPart);
 
-                    BatchItem batchItem = new BatchItem();
+                    T item = SerializationUtils.clone(template);
 
-                    consumeHeaders(bodyPart, batchItem);
-                    batchItem.setContent(
+                    consumeHeaders(bodyPart, item);
+                    item.setContent(
                             bodyPart.stream().map(BatchPayloadLine::toString).collect(Collectors.joining()));
 
-                    return batchItem;
+                    return item;
                 }).collect(Collectors.toList());
     }
 }

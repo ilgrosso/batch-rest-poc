@@ -1,55 +1,18 @@
 package net.tirasa.batch.rest.poc.batch;
 
+import java.io.Serializable;
 import java.util.List;
 import java.util.Map;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
 
-public class BatchItem {
+public abstract class BatchItem implements Serializable {
 
-    private int status;
-
-    private String method;
-
-    private String requestURI;
-
-    private String queryString;
+    private static final long serialVersionUID = -1393976266651766259L;
 
     private Map<String, List<Object>> headers;
 
     private String content;
-
-    public int getStatus() {
-        return status;
-    }
-
-    public void setStatus(final int status) {
-        this.status = status;
-    }
-
-    public String getMethod() {
-        return method;
-    }
-
-    public void setMethod(final String method) {
-        this.method = method;
-    }
-
-    public String getRequestURI() {
-        return requestURI;
-    }
-
-    public void setRequestURI(final String requestURI) {
-        this.requestURI = requestURI;
-    }
-
-    public String getQueryString() {
-        return queryString;
-    }
-
-    public void setQueryString(final String queryString) {
-        this.queryString = queryString;
-    }
 
     public Map<String, List<Object>> getHeaders() {
         return headers;
