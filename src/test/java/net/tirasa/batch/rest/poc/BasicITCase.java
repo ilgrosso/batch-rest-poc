@@ -75,13 +75,16 @@ public class BasicITCase {
 
         String boundary = "--batch_" + UUID.randomUUID().toString();
 
+        String body = BatchPayloadGenerator.generate(reqItems, boundary);
+        LOG.debug("Batch request body:\n{}", body);
+
         Response response = WebClient.create("http://localhost:8080").path("batch").
                 type("multipart/mixed;boundary=" + boundary.substring(2)).
-                post(BatchPayloadGenerator.generate(reqItems, boundary));
+                post(body);
         assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
         assertTrue(response.getMediaType().toString().startsWith("multipart/mixed;boundary="));
 
-        String body = IOUtils.toString((InputStream) response.getEntity());
+        body = IOUtils.toString((InputStream) response.getEntity());
         LOG.debug("Batch response body:\n{}", body);
 
         List<BatchResponseItem> resItems = BatchPayloadParser.parse(
