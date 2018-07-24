@@ -3,7 +3,23 @@ PoC showing how to implement batch processing via REST with Apache CXF
 
 Inspired by [OData 4.0's Batch requests](http://docs.oasis-open.org/odata/odata/v4.0/os/part1-protocol/odata-v4.0-os-part1-protocol.html#_Toc372793748), this PoC shows how to handle a batch request composed by a sequence of REST requests.
 
+## Batch requests
+
+The batch request MUST contain a Content-Type header specifying a content type of `multipart/mixed` and a boundary specification as defined in [RFC2046](https://tools.ietf.org/html/rfc2046).
+
+The body of a batch request is made up of a series of individual requests, each represented as a distinct MIME part (i.e. separated by the boundary defined in the `Content-Type` header).
+
+The service MUST process the requests within a batch request sequentially. 
+
+An individual request MUST include a `Content-Type` header with value `application/http` and a `Content-Transfer-Encoding` header with value `binary`.
+
 ### Sample request
+This contains:
+1. user create, with XML payload
+1. user update, with JSON payload
+1. role delete (no matching REST endpoint for that is available, on purpose)
+1. user delete
+
 _Note that ^M represents CR LF_
 
 ```
@@ -53,6 +69,20 @@ DELETE /users/xxxyyy HTTP/1.1
 --batch_4d1ded08-a39f-496b-b341-74730c4d8cdb--
 
 ```
+
+## Batch responses
+
+Requests within a batch are evaluated according to the same semantics used when the request appears outside the context of a batch.
+
+The order of change sets and individual requests in a Batch request is significant. A service MUST process the components of the Batch in the order received.
+
+If the set of request headers of a Batch request are valid (the `Content-Type` is set to `multipart/mixed`, etc.) the service MUST return a `200 OK` HTTP response code to indicate that the request was accepted for processing.
+
+If the service receives a Batch request with an invalid set of headers it MUST return a `4xx response` code and perform no further processing of the request.
+
+A response to a batch request MUST contain a `Content-Type` header with value `multipart/mixed`.
+
+Structurally, a batch response body MUST match one-to-one with the corresponding batch request body, such that the same multipart MIME message structure defined for requests is used for responses
 
 ### Sample response
 _Note that ^M represents CR LF_
