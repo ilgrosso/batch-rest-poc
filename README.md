@@ -3,6 +3,26 @@ PoC showing how to implement batch processing via REST with Apache CXF
 
 Inspired by [OData 4.0's Batch requests](http://docs.oasis-open.org/odata/odata/v4.0/os/part1-protocol/odata-v4.0-os-part1-protocol.html#_Toc372793748), this PoC shows how to handle a batch request composed by a sequence of REST requests.
 
+## How to run
+
+```
+mvn clean verify
+```
+
+will spin a Jetty instance bearing the following Apache CXF-based REST services:
+* [/users](https://github.com/ilgrosso/batch-rest-poc/blob/master/src/main/java/net/tirasa/batch/rest/poc/api/UserService.java) for common user management
+* [/](https://github.com/ilgrosso/batch-rest-poc/blob/master/src/main/java/net/tirasa/batch/rest/poc/api/RootService.java) handling batch
+
+A [test class](https://github.com/ilgrosso/batch-rest-poc/blob/master/src/test/java/net/tirasa/batch/rest/poc/BasicITCase.java) will then send the sample batch request reported below, and verify that the batch response is formatted as expected.
+
+## How does it work?
+
+The actual batch processing is [implemented](https://github.com/ilgrosso/batch-rest-poc/blob/master/src/main/java/net/tirasa/batch/rest/poc/impl/RootServiceImpl.java#L82) as follows:
+
+1. parse the batch request into separate items
+1. find matching REST endpoint for each item, delegate actual process and get response
+1. build the batch response by assembling all the delegated responses
+
 ## Batch requests
 
 The batch request MUST contain a Content-Type header specifying a content type of `multipart/mixed` and a boundary specification as defined in [RFC2046](https://tools.ietf.org/html/rfc2046).
