@@ -17,7 +17,7 @@ A [test class](https://github.com/ilgrosso/batch-rest-poc/blob/master/src/test/j
 
 ## How does it work?
 
-The actual batch processing is [implemented](https://github.com/ilgrosso/batch-rest-poc/blob/master/src/main/java/net/tirasa/batch/rest/poc/impl/RootServiceImpl.java#L82) as follows:
+The actual batch processing is [implemented](https://github.com/ilgrosso/batch-rest-poc/blob/master/src/main/java/net/tirasa/batch/rest/poc/impl/RootServiceImpl.java#L94) as follows:
 
 1. parse the batch request into separate items
 1. find matching REST endpoint for each item, delegate actual process and get response
