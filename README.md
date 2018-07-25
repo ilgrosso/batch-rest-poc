@@ -38,56 +38,51 @@ This contains:
 1. user create, with XML payload
 1. user update, with JSON payload
 1. role delete (no matching REST endpoint for that is available, on purpose)
+1. user delete with bad key
 1. user delete
 
 _Note that ^M represents CR LF_
 
 ```
 POST /batch HTTP/1.1
-Content-Type: multipart/mixed;boundary=batch_4d1ded08-a39f-496b-b341-74730c4d8cdb
+Content-Type: multipart/mixed;boundary=batch_d1befdc3-0a33-4463-8361-5aa28f1c740a
 
---batch_4d1ded08-a39f-496b-b341-74730c4d8cdb^M
+--batch_d1befdc3-0a33-4463-8361-5aa28f1c740a^M
 Content-Type: application/http
 Content-Transfer-Encoding: binary
 ^M
 POST /users HTTP/1.1
-Content-Length: 128
+Accept: application/xml
+Content-Length: 689
 Content-Type: application/xml
 ^M
-<user>
-  <username>xxxyyy</username>
-  <attributes>
-    <firstname>John</firstname>
-    <surname>Doe</surname>
-  </attributes>
-</user>
---batch_4d1ded08-a39f-496b-b341-74730c4d8cdb^M
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?><user><attributes><entry><key xsi:type="xs:string" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">firstname</key><value xsi:type="xs:string" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">John</value></entry><entry><key xsi:type="xs:string" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">surname</key><value xsi:type="xs:string" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">Doe</value></entry></attributes><id>xxxyyy</id></user>
+--batch_d1befdc3-0a33-4463-8361-5aa28f1c740a^M
 Content-Type: application/http
 Content-Transfer-Encoding: binary
 ^M
 PUT /users/xxxyyy HTTP/1.1
-Content-Length: 94
+Accept: application/json
+Content-Length: 69
 Content-Type: application/json
 ^M
-{
-  "username": "yuyueeee",
-  "attributes": [
-    "firstname": "Johnny",
-    "lastname": "Doe"
-  ]
-}
---batch_4d1ded08-a39f-496b-b341-74730c4d8cdb^M
+{"id":"yuyueeee","attributes":{"firstname":"Johnny","surname":"Doe"}}
+--batch_d1befdc3-0a33-4463-8361-5aa28f1c740a^M
 Content-Type: application/http
 Content-Transfer-Encoding: binary
 ^M
 DELETE /roles/xxxyyy HTTP/1.1
---batch_4d1ded08-a39f-496b-b341-74730c4d8cdb^M
+--batch_d1befdc3-0a33-4463-8361-5aa28f1c740a^M
 Content-Type: application/http
 Content-Transfer-Encoding: binary
 ^M
 DELETE /users/xxxyyy HTTP/1.1
---batch_4d1ded08-a39f-496b-b341-74730c4d8cdb--
-
+--batch_d1befdc3-0a33-4463-8361-5aa28f1c740a^M
+Content-Type: application/http
+Content-Transfer-Encoding: binary
+^M
+DELETE /users/yuyueeee HTTP/1.1
+--batch_d1befdc3-0a33-4463-8361-5aa28f1c740a--
 ```
 
 ## Batch responses
@@ -109,57 +104,52 @@ _Note that ^M represents CR LF_
 
 ```
 HTTP/1.1 200 Ok
-Content-Type: multipart/mixed;boundary=batch_80ce758a-775e-48c8-9c32-42d9bb0c4ef2
+Content-Type: multipart/mixed;boundary=batch_682899de-0bbb-4e7a-8348-fff1d14244c3
 
---batch_80ce758a-775e-48c8-9c32-42d9bb0c4ef2^M
+
+--batch_682899de-0bbb-4e7a-8348-fff1d14244c3^M
 Content-Type: application/http
 Content-Transfer-Encoding: binary
 ^M
 HTTP/1.1 201 Created
-Date: Tue, 24 Jul 2018 08:31:22 GMT
+Date: Wed, 25 Jul 2018 10:43:34 GMT
+Location: http://localhost:8080/users/xxxyyy
 Content-Type: application/xml
 ^M
-<user>
-  <username>xxxyyy</username>
-  <attributes>
-    <firstname>John</firstname>
-    <surname>Doe</surname>
-  </attributes>
-</user>
-
---batch_80ce758a-775e-48c8-9c32-42d9bb0c4ef2^M
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?><user><attributes><entry><key xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xs="http://www.w3.org/2001/XMLSchema" xsi:type="xs:string">firstname</key><value xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xs="http://www.w3.org/2001/XMLSchema" xsi:type="xs:string">John</value></entry><entry><key xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xs="http://www.w3.org/2001/XMLSchema" xsi:type="xs:string">surname</key><value xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xs="http://www.w3.org/2001/XMLSchema" xsi:type="xs:string">Doe</value></entry></attributes><id>xxxyyy</id></user>
+--batch_682899de-0bbb-4e7a-8348-fff1d14244c3^M
 Content-Type: application/http
 Content-Transfer-Encoding: binary
 ^M
 HTTP/1.1 200 OK
-Date: Tue, 24 Jul 2018 08:31:22 GMT
+Date: Wed, 25 Jul 2018 10:43:35 GMT
 Content-Type: application/json
 ^M
-{
-  "username": "yuyueeee",
-  "attributes": [
-    "firstname": "Johnny",
-    "lastname": "Doe"
-  ]
-}
-
---batch_80ce758a-775e-48c8-9c32-42d9bb0c4ef2^M
+{"id":"yuyueeee","attributes":{}}
+--batch_682899de-0bbb-4e7a-8348-fff1d14244c3^M
 Content-Type: application/http
 Content-Transfer-Encoding: binary
 ^M
 HTTP/1.1 404 Not Found
 Content-Length: 0
-Date: Tue, 24 Jul 2018 08:31:22 GMT
-Allow: DELETE,POST,GET,PATCH,PUT,OPTIONS,HEAD
+Date: Wed, 25 Jul 2018 10:43:35 GMT
+Allow: DELETE,POST,GET,PUT,OPTIONS,HEAD
 ^M
---batch_80ce758a-775e-48c8-9c32-42d9bb0c4ef2^M
+--batch_682899de-0bbb-4e7a-8348-fff1d14244c3^M
+Content-Type: application/http
+Content-Transfer-Encoding: binary
+^M
+HTTP/1.1 404 Not Found
+Content-Length: 0
+Date: Wed, 25 Jul 2018 10:43:35 GMT
+
+--batch_682899de-0bbb-4e7a-8348-fff1d14244c3^M
 Content-Type: application/http
 Content-Transfer-Encoding: binary
 ^M
 HTTP/1.1 204 No Content
 Content-Length: 0
-Date: Tue, 24 Jul 2018 08:31:22 GMT
-^M
---batch_80ce758a-775e-48c8-9c32-42d9bb0c4ef2--
+Date: Wed, 25 Jul 2018 10:43:35 GMT
 
+--batch_682899de-0bbb-4e7a-8348-fff1d14244c3--
 ```
