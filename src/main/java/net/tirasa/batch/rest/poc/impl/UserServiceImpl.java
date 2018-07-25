@@ -1,79 +1,69 @@
 package net.tirasa.batch.rest.poc.impl;
 
-import java.io.IOException;
-import java.io.InputStream;
+import java.net.URI;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+import javax.ws.rs.BadRequestException;
+import javax.ws.rs.NotFoundException;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
+import javax.ws.rs.core.UriInfo;
 import net.tirasa.batch.rest.poc.api.UserService;
-import org.apache.cxf.helpers.IOUtils;
-import org.apache.cxf.jaxrs.ext.MessageContext;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import net.tirasa.batch.rest.poc.data.User;
 
 public class UserServiceImpl implements UserService {
 
-    private static final Logger LOG = LoggerFactory.getLogger(UserService.class);
+    private static final Map<String, User> USERS = Collections.synchronizedMap(new HashMap<>());
 
     @Context
-    private MessageContext mc;
+    private UriInfo uriInfo;
 
     @Override
-    public Response list() {
-        LOG.debug("============> Invoked list()");
-        return Response.ok().build();
+    public List<User> list() {
+        return USERS.values().stream().collect(Collectors.toList());
     }
 
     @Override
-    public Response read(String id) {
-        LOG.debug("============> Invoked read(" + id + ")");
-        return Response.ok().build();
-    }
-
-    @Override
-    public Response create(InputStream in) {
-        String user = null;
-        try {
-            user = IOUtils.toString(in);
-            LOG.debug("============> Invoked create() with payload {}", user);
-        } catch (IOException e) {
-            LOG.error("Unexpected", e);
+    public User read(final String id) {
+        User user = USERS.get(id);
+        if (user == null) {
+            throw new NotFoundException(id);
         }
 
-        return Response.status(Response.Status.CREATED).
-                entity(user).
-                type(mc.getHttpServletRequest().getContentType()).
-                build();
+        return user;
     }
 
     @Override
-    public Response update(String id, InputStream in) {
-        try {
-            LOG.debug("============> Invoked update({}) with payload {}", id, IOUtils.toString(in));
-        } catch (IOException e) {
-            LOG.error("Unexpected", e);
-        }
-        return Response.noContent().build();
-    }
-
-    @Override
-    public Response replace(String id, InputStream in) {
-        String user = null;
-        try {
-            user = IOUtils.toString(in);
-            LOG.debug("============> Invoked replace({}) with payload {}", id, user);
-        } catch (IOException e) {
-            LOG.error("Unexpected", e);
+    public Response create(final User user) {
+        if (user.getId() == null) {
+            throw new BadRequestException("Missing user id");
         }
 
-        return Response.ok().
-                entity(user).
-                type(mc.getHttpServletRequest().getContentType()).
-                build();
+        USERS.put(user.getId(), user);
+
+        URI location = uriInfo.getAbsolutePathBuilder().path(user.getId()).build();
+        return Response.created(location).entity(user).build();
     }
 
     @Override
-    public Response delete(String id) {
-        LOG.debug("============> Invoked delete(" + id + ")");
-        return Response.noContent().build();
+    public Response replace(final String id, final User replacement) {
+        User user = USERS.remove(id);
+        if (user == null) {
+            throw new NotFoundException(id);
+        }
+
+        USERS.put(replacement.getId(), replacement);
+        return Response.ok(replacement).build();
+    }
+
+    @Override
+    public void delete(final String id) {
+        User user = USERS.remove(id);
+        if (user == null) {
+            throw new NotFoundException(id);
+        }
     }
 }
