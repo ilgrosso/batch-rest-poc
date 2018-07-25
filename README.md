@@ -106,7 +106,6 @@ _Note that ^M represents CR LF_
 HTTP/1.1 200 Ok
 Content-Type: multipart/mixed;boundary=batch_682899de-0bbb-4e7a-8348-fff1d14244c3
 
-
 --batch_682899de-0bbb-4e7a-8348-fff1d14244c3^M
 Content-Type: application/http
 Content-Transfer-Encoding: binary
