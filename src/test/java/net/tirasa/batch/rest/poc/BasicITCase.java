@@ -1,7 +1,6 @@
 package net.tirasa.batch.rest.poc;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -15,6 +14,7 @@ import javax.ws.rs.HttpMethod;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import net.tirasa.batch.rest.poc.batch.BatchConstants;
 import net.tirasa.batch.rest.poc.batch.BatchPayloadGenerator;
 import net.tirasa.batch.rest.poc.batch.BatchPayloadParser;
 import net.tirasa.batch.rest.poc.batch.BatchRequestItem;
@@ -29,8 +29,9 @@ public class BasicITCase {
 
     private static final Logger LOG = LoggerFactory.getLogger(BasicITCase.class);
 
-    @Test
-    public void basic() throws IOException {
+    private static final String BASE_ADDRESS = "http://localhost:8080/batch";
+
+    private String requestBody(final String boundary) {
         List<BatchRequestItem> reqItems = new ArrayList<>();
 
         BatchRequestItem create = new BatchRequestItem();
@@ -73,18 +74,14 @@ public class BasicITCase {
         delete2.setRequestURI("/users/xxxyyy");
         reqItems.add(delete2);
 
-        String boundary = "--batch_" + UUID.randomUUID().toString();
-
         String body = BatchPayloadGenerator.generate(reqItems, boundary);
         LOG.debug("Batch request body:\n{}", body);
 
-        Response response = WebClient.create("http://localhost:8080").path("batch").
-                type("multipart/mixed;boundary=" + boundary.substring(2)).
-                post(body);
-        assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
-        assertTrue(response.getMediaType().toString().startsWith("multipart/mixed;boundary="));
+        return body;
+    }
 
-        body = IOUtils.toString((InputStream) response.getEntity());
+    private void check(final Response response) throws IOException {
+        String body = IOUtils.toString((InputStream) response.getEntity());
         LOG.debug("Batch response body:\n{}", body);
 
         List<BatchResponseItem> resItems = BatchPayloadParser.parse(
@@ -98,5 +95,62 @@ public class BasicITCase {
         assertEquals(MediaType.APPLICATION_JSON, resItems.get(1).getHeaders().get(HttpHeaders.CONTENT_TYPE).get(0));
         assertEquals(Response.Status.NOT_FOUND.getStatusCode(), resItems.get(2).getStatus());
         assertEquals(Response.Status.NO_CONTENT.getStatusCode(), resItems.get(3).getStatus());
+    }
+
+    @Test
+    public void sync() throws IOException {
+        String boundary = "--batch_" + UUID.randomUUID().toString();
+
+        Response response = WebClient.create(BASE_ADDRESS).
+                type(BatchConstants.multipartMixedWith(boundary.substring(2))).
+                post(requestBody(boundary));
+        assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
+        assertEquals(BatchConstants.multipartMixedWith(boundary.substring(2)), response.getMediaType().toString());
+
+        check(response);
+    }
+
+    @Test
+    public void async() throws IOException {
+        String boundary = "--batch_" + UUID.randomUUID().toString();
+
+        // request async processing
+        Response response = WebClient.create(BASE_ADDRESS).
+                type(BatchConstants.multipartMixedWith(boundary.substring(2))).
+                header(BatchConstants.PREFER_HEADER, BatchConstants.PREFERENCE_RESPOND_ASYNC).
+                post(requestBody(boundary));
+        assertEquals(Response.Status.ACCEPTED.getStatusCode(), response.getStatus());
+        assertEquals(BatchConstants.multipartMixedWith(boundary.substring(2)), response.getMediaType().toString());
+        assertEquals(
+                BatchConstants.PREFERENCE_RESPOND_ASYNC,
+                response.getHeaderString(BatchConstants.PREFERENCE_APPLIED_HEADER));
+
+        // check results: still work in progress...
+        response = WebClient.create(BASE_ADDRESS).
+                type(BatchConstants.multipartMixedWith(boundary.substring(2))).
+                get();
+        assertEquals(Response.Status.ACCEPTED.getStatusCode(), response.getStatus());
+        assertEquals(BatchConstants.multipartMixedWith(boundary.substring(2)), response.getMediaType().toString());
+
+        // wait a bit...
+        try {
+            Thread.sleep(3000);
+        } catch (InterruptedException ex) {
+        }
+
+        // check results: now available
+        response = WebClient.create(BASE_ADDRESS).
+                type(BatchConstants.multipartMixedWith(boundary.substring(2))).
+                get();
+        assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
+        assertEquals(BatchConstants.multipartMixedWith(boundary.substring(2)), response.getMediaType().toString());
+
+        check(response);
+
+        // check again results: removed since they were returned above
+        response = WebClient.create(BASE_ADDRESS).
+                type(BatchConstants.multipartMixedWith(boundary.substring(2))).
+                get();
+        assertEquals(Response.Status.NOT_FOUND.getStatusCode(), response.getStatus());
     }
 }
