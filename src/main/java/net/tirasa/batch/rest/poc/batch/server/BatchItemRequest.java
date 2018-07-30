@@ -1,4 +1,4 @@
-package net.tirasa.batch.rest.poc.impl;
+package net.tirasa.batch.rest.poc.batch.server;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
