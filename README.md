@@ -13,7 +13,7 @@ will spin a Jetty instance bearing the following Apache CXF-based REST services:
 * [/users](https://github.com/ilgrosso/batch-rest-poc/blob/master/src/main/java/net/tirasa/batch/rest/poc/api/UserService.java) for common user management
 * [/](https://github.com/ilgrosso/batch-rest-poc/blob/master/src/main/java/net/tirasa/batch/rest/poc/api/RootService.java) handling batch
 
-A couple of test classes will then run and send the sample batch request reported below, and verify that the batch response is formatted as expected, both with synchronous and asynchronous processing:
+A couple of test classes will then run and send the sample batch request reported below, and verify that the batch response is formatted as expected, both with __synchronous__ and __asynchronous__ processing:
 1. [BasicITCase](https://github.com/ilgrosso/batch-rest-poc/blob/master/src/test/java/net/tirasa/batch/rest/poc/BasicITCase.java) using plain `WebClient`
 1. [ProxyClientITCase](https://github.com/ilgrosso/batch-rest-poc/blob/master/src/test/java/net/tirasa/batch/rest/poc/ProxyClientITCase.java) using Apache CXF's [Client Proxy API](https://cxf.apache.org/docs/jax-rs-client-api.html#JAX-RSClientAPI-Proxy-basedAPI)
 
