@@ -4,7 +4,7 @@ public final class BatchConstants {
 
     public static final String PREFER_HEADER = "Prefer";
 
-    public static final String PREFERENCE_RESPOND_ASYNC = "respond-asyncF";
+    public static final String PREFERENCE_RESPOND_ASYNC = "respond-async";
 
     public static final String PREFERENCE_APPLIED_HEADER = "Preference-Applied";
 
