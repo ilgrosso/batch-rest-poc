@@ -16,15 +16,19 @@ import org.springframework.http.MediaType;
 
 public class BatchItemRequest extends HttpServletRequestWrapper {
 
+    private final String basePath;
+
     private final BatchRequestItem batchItem;
 
     private final ServletInputStream inputStream;
 
     public BatchItemRequest(
+            final String basePath,
             final HttpServletRequest request,
             final BatchRequestItem batchItem) {
 
         super(request);
+        this.basePath = basePath;
         this.batchItem = batchItem;
         this.inputStream = new ServletInputStream() {
 
@@ -64,6 +68,11 @@ public class BatchItemRequest extends HttpServletRequestWrapper {
     }
 
     @Override
+    public StringBuffer getRequestURL() {
+        return new StringBuffer(basePath).append(getRequestURI());
+    }
+
+    @Override
     public String getRequestURI() {
         return batchItem.getRequestURI();
     }
@@ -96,7 +105,7 @@ public class BatchItemRequest extends HttpServletRequestWrapper {
     public String getHeader(final String name) {
         return batchItem.getHeaders().containsKey(name)
                 ? batchItem.getHeaders().get(name).get(0).toString()
-                : HttpHeaders.CONTENT_TYPE.equals(name)
+                : HttpHeaders.CONTENT_TYPE.equals(name) || HttpHeaders.ACCEPT.equals(name)
                 ? MediaType.ALL_VALUE
                 : super.getHeader(name);
     }
@@ -106,7 +115,7 @@ public class BatchItemRequest extends HttpServletRequestWrapper {
         return batchItem.getHeaders().containsKey(name)
                 ? Collections.enumeration(
                         batchItem.getHeaders().get(name).stream().map(Object::toString).collect(Collectors.toList()))
-                : HttpHeaders.CONTENT_TYPE.equals(name)
+                : HttpHeaders.CONTENT_TYPE.equals(name) || HttpHeaders.ACCEPT.equals(name)
                 ? Collections.enumeration(Arrays.asList(MediaType.ALL_VALUE))
                 : super.getHeaders(name);
     }

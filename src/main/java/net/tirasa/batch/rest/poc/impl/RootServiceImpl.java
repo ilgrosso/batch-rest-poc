@@ -110,6 +110,7 @@ public class RootServiceImpl implements RootService {
 
         // prepare for batch processing
         BatchProcess batchProcess = new BatchProcess(
+                uriInfo.getBaseUri().toASCIIString(),
                 batchRequestItems,
                 getDestinationRegistryFromBusOrDefault(
                         mc.getServletConfig().getInitParameter(CXFNonSpringServlet.TRANSPORT_ID)),

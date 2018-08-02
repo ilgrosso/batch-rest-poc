@@ -21,6 +21,7 @@ import org.slf4j.LoggerFactory;
 public class BatchProcess implements Callable<List<BatchResponseItem>> {
 
     private static final Logger LOG = LoggerFactory.getLogger(BatchProcess.class);
+    private final String basePath;
 
     private final List<BatchRequestItem> batchRequestItems;
 
@@ -31,11 +32,13 @@ public class BatchProcess implements Callable<List<BatchResponseItem>> {
     private final HttpServletRequest servletRequest;
 
     public BatchProcess(
+            final String basePath,
             final List<BatchRequestItem> batchRequestItems,
             final DestinationRegistry destinationRegistry,
             final ServletConfig servletConfig,
             final HttpServletRequest servletRequest) {
 
+        this.basePath = basePath;
         this.batchRequestItems = batchRequestItems;
         this.destinationRegistry = destinationRegistry;
         this.servletConfig = servletConfig;
@@ -58,7 +61,7 @@ public class BatchProcess implements Callable<List<BatchResponseItem>> {
                 resItem.setStatus(404);
                 batchResponseItems.add(resItem);
             } else {
-                BatchItemRequest request = new BatchItemRequest(servletRequest, reqItem);
+                BatchItemRequest request = new BatchItemRequest(basePath, servletRequest, reqItem);
                 BatchItemResponse response = new BatchItemResponse();
                 try {
                     dest.invoke(servletConfig, servletConfig.getServletContext(), request, response);

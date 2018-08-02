@@ -3,6 +3,7 @@ package net.tirasa.batch.rest.poc.batch;
 import java.io.Serializable;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
 
@@ -10,7 +11,7 @@ public abstract class BatchItem implements Serializable {
 
     private static final long serialVersionUID = -1393976266651766259L;
 
-    private Map<String, List<Object>> headers;
+    private final Map<String, List<Object>> headers = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
 
     private String content;
 
@@ -19,7 +20,8 @@ public abstract class BatchItem implements Serializable {
     }
 
     public void setHeaders(final Map<String, List<Object>> headers) {
-        this.headers = headers;
+        this.headers.clear();
+        this.headers.putAll(headers);
     }
 
     public String getContent() {
